@@ -73,3 +73,33 @@ def calcular_altura(results, a: int, height: int) -> int:
 
 def calcular_ancho(results, a: int, width: int) -> int:
     return int(results.pose_landmarks.landmark[a].x * width)
+
+
+def angle_calculate(results, a: int, b: int, c: int, width: int, height: int) -> float:
+    """Calcula el ángulo en el punto b formado por (a-b-c)."""
+    x1 = int(results.pose_landmarks.landmark[a].x * width)
+    y1 = int(results.pose_landmarks.landmark[a].y * height)
+
+    x2 = int(results.pose_landmarks.landmark[b].x * width)
+    y2 = int(results.pose_landmarks.landmark[b].y * height)
+
+    x3 = int(results.pose_landmarks.landmark[c].x * width)
+    y3 = int(results.pose_landmarks.landmark[c].y * height)
+
+    p1 = np.array([x1, y1])
+    p2 = np.array([x2, y2])
+    p3 = np.array([x3, y3])
+
+    l1 = np.linalg.norm(p2 - p3)
+    l2 = np.linalg.norm(p1 - p3)
+    l3 = np.linalg.norm(p1 - p2)
+
+    try:
+        angle = degrees(acos((l1**2 + l3**2 - l2**2) / (2 * l1 * l3)))
+    except Exception:
+        angle = 0
+
+    if np.isnan(angle):
+        angle = 0
+
+    return float(angle)
