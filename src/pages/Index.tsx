@@ -148,15 +148,54 @@ const Index: React.FC = () => {
                   ...prev,
                   {
                     t,
-                    spm: typeof msg.spm === "number" ? msg.spm : last?.spm,
-                    left_hand: typeof msg.left_hand === "number" ? msg.left_hand : last?.left_hand,
-                    right_hand: typeof msg.right_hand === "number" ? msg.right_hand : last?.right_hand,
-                    head: typeof msg.head === "number" ? msg.head : last?.head,
-                    hip: typeof msg.hip === "number" ? msg.hip : last?.hip,
-                    rotation: typeof msg.rotation === "number" ? msg.rotation : last?.rotation,
-                    left_axilla: typeof msg.left_axilla === "number" ? msg.left_axilla : last?.left_axilla,
-                    right_axilla: typeof msg.right_axilla === "number" ? msg.right_axilla : last?.right_axilla,
-                    strokes: typeof msg.strokes === "number" ? msg.strokes : last?.strokes,
+                    spm:
+                      typeof msg.spm === "number"
+                        ? msg.spm
+                        : typeof msg.stroke_rate === "number"
+                        ? msg.stroke_rate
+                        : last?.spm,
+                    left_hand:
+                      typeof msg.left_hand === "number"
+                        ? msg.left_hand
+                        : typeof msg.list_mun_izq === "number"
+                        ? msg.list_mun_izq
+                        : last?.left_hand,
+                    right_hand:
+                      typeof msg.right_hand === "number"
+                        ? msg.right_hand
+                        : typeof msg.list_mun_der === "number"
+                        ? msg.list_mun_der
+                        : last?.right_hand,
+                    head:
+                      typeof msg.head === "number"
+                        ? msg.head
+                        : typeof msg.list_head_alt === "number"
+                        ? msg.list_head_alt
+                        : last?.head,
+                    hip:
+                      typeof msg.hip === "number"
+                        ? msg.hip
+                        : typeof msg.list_hip === "number"
+                        ? msg.list_hip
+                        : last?.hip,
+                    rotation:
+                      typeof msg.rotation === "number"
+                        ? msg.rotation
+                        : last?.rotation,
+                    left_axilla:
+                      typeof msg.left_axilla === "number"
+                        ? msg.left_axilla
+                        : typeof msg.list_angle_axi_izq === "number"
+                        ? msg.list_angle_axi_izq
+                        : last?.left_axilla,
+                    right_axilla:
+                      typeof msg.right_axilla === "number"
+                        ? msg.right_axilla
+                        : typeof msg.list_angle_axi_der === "number"
+                        ? msg.list_angle_axi_der
+                        : last?.right_axilla,
+                    strokes:
+                      typeof msg.strokes === "number" ? msg.strokes : last?.strokes,
                   },
                 ];
               });

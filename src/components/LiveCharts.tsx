@@ -8,6 +8,7 @@ import {
   Tooltip as ReTooltip,
   ResponsiveContainer,
   Legend,
+  Area,
 } from "recharts";
 
 export type LivePoint = {
@@ -86,6 +87,8 @@ const LiveCharts: React.FC<LiveChartsProps> = ({ data, images }) => {
                 <YAxis tick={{ fontSize: 12 }} />
                 <ReTooltip />
                 <Legend />
+                <Area type="monotone" dataKey="left_axilla" stackId="ax" stroke="hsl(var(--secondary))" fill="hsl(var(--secondary) / 0.3)" name="Axila Izq (área)" />
+                <Area type="monotone" dataKey="right_axilla" stackId="ax" stroke="hsl(var(--muted-foreground))" fill="hsl(var(--muted-foreground) / 0.3)" name="Axila Der (área)" />
                 <Line dot={false} type="monotone" dataKey="rotation" stroke="hsl(var(--primary))" name="Rotación" />
                 <Line dot={false} type="monotone" dataKey="left_axilla" stroke="hsl(var(--secondary))" name="Axila Izq" />
                 <Line dot={false} type="monotone" dataKey="right_axilla" stroke="hsl(var(--muted-foreground))" name="Axila Der" />
