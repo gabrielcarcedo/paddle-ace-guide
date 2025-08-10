@@ -83,72 +83,72 @@ class ProcessingConsumer(AsyncWebsocketConsumer):
             await self.send_json({"type": "complete", "processed_video_url": f"/media/videos/{self.job_id}.mp4"})
             return
 
-cap = cv2.VideoCapture(video_path)
-total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
-fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
-if fps <= 0:
-    fps = 30.0
-metadata = max(1, int(round(fps)))  # usado para promedios de fases y ~frames/seg
-
-# Contadores y estado
-i = 0
-cont_paladas = 0
-cont_frames = 0
-tiempo_ciclo_paladas = 0.0
-spm_ajuste = 0
-
-# Fases de palada y métricas auxiliares
-cont_phase_aerial = 0
-cont_phase_water = 0
-prom_phase_aerial = 0
-prom_phase_water = 0
-porc_phase_aerial = 0
-porc_phase_water = 0
-token_phase = 0
-phase = ""
-
-# Tokens lado y ángulo de rotación máximo por lado
-token_izq = False
-token_der = False
-token_hand = "LEFT"
-aux_hand = ""
-aux_angle = 0.0
-
-# Series para gráficas
-list_angle_rod_izq = []
-list_angle_rod_der = []
-list_angle_cod_izq = []
-list_angle_cod_der = []
-list_angle_axi_izq = []
-list_angle_axi_der = []
-
-list_head_alt = []
-list_cad_izq = []
-list_mun_izq = []
-list_cad_der = []
-list_mun_der = []
-list_mun_izq_ancho = []
-list_mun_der_ancho = []
-list_hom_izq_ancho = []
-list_hom_der_ancho = []
-
-list_hombro_angle = []
-list_hombro_dist = []
-list_ciclo_palada = []
-list_stroke_rate = []
-list_phases_segmentation = []
-list_phase_aerial_time = []
-list_phase_water_time = []
-list_rotation_angle = []
-list_hand_paddle = []
-list_hip = []
-list_aux = []
-
-        # MediaPipe Pose
-        mp_drawing = mp.solutions.drawing_utils
-        mp_pose = mp.solutions.pose
-
+        cap = cv2.VideoCapture(video_path)
         try:
+            total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
+            fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+            if fps <= 0:
+                fps = 30.0
+            metadata = max(1, int(round(fps)))  # usado para promedios de fases y ~frames/seg
+
+            # Contadores y estado
+            i = 0
+            cont_paladas = 0
+            cont_frames = 0
+            tiempo_ciclo_paladas = 0.0
+            spm_ajuste = 0
+
+            # Fases de palada y métricas auxiliares
+            cont_phase_aerial = 0
+            cont_phase_water = 0
+            prom_phase_aerial = 0
+            prom_phase_water = 0
+            porc_phase_aerial = 0
+            porc_phase_water = 0
+            token_phase = 0
+            phase = ""
+
+            # Tokens lado y ángulo de rotación máximo por lado
+            token_izq = False
+            token_der = False
+            token_hand = "LEFT"
+            aux_hand = ""
+            aux_angle = 0.0
+
+            # Series para gráficas
+            list_angle_rod_izq = []
+            list_angle_rod_der = []
+            list_angle_cod_izq = []
+            list_angle_cod_der = []
+            list_angle_axi_izq = []
+            list_angle_axi_der = []
+
+            list_head_alt = []
+            list_cad_izq = []
+            list_mun_izq = []
+            list_cad_der = []
+            list_mun_der = []
+            list_mun_izq_ancho = []
+            list_mun_der_ancho = []
+            list_hom_izq_ancho = []
+            list_hom_der_ancho = []
+
+            list_hombro_angle = []
+            list_hombro_dist = []
+            list_ciclo_palada = []
+            list_stroke_rate = []
+            list_phases_segmentation = []
+            list_phase_aerial_time = []
+            list_phase_water_time = []
+            list_rotation_angle = []
+            list_hand_paddle = []
+            list_hip = []
+            list_aux = []
+
+            # MediaPipe Pose
+            mp_drawing = mp.solutions.drawing_utils
+            mp_pose = mp.solutions.pose
+
             with mp_pose.Pose(static_image_mode=False, enable_segmentation=True, model_complexity=1) as pose:
                 while True:
                     ok, frame = cap.read()
@@ -171,6 +171,7 @@ list_aux = []
                         progress = min(1.0, float(pos) / float(total_frames))
                     else:
                         progress = 0.0
+                        pos = 0.0
 
                     # Procesamiento cuando hay landmarks
                     if results.pose_landmarks is not None:
@@ -195,60 +196,60 @@ list_aux = []
                             aux_hand = token_hand
                             aux_angle = 0
 
-# Alturas y anchos relevantes
-hom_izq = height - calcular_altura(results, 11, height)
-cad_izq = height - calcular_altura(results, 23, height)
-aux_palada_izq = (hom_izq - cad_izq) / 2 + cad_izq
+                        # Alturas y anchos relevantes
+                        hom_izq = height - calcular_altura(results, 11, height)
+                        cad_izq = height - calcular_altura(results, 23, height)
+                        aux_palada_izq = (hom_izq - cad_izq) / 2 + cad_izq
 
-hom_der = height - calcular_altura(results, 12, height)
-cad_der = height - calcular_altura(results, 24, height)
-aux_palada_der = (hom_der - cad_der) / 2 + cad_der
+                        hom_der = height - calcular_altura(results, 12, height)
+                        cad_der = height - calcular_altura(results, 24, height)
+                        aux_palada_der = (hom_der - cad_der) / 2 + cad_der
 
-mun_izq = height - calcular_altura(results, 15, height)
-mun_izq_ancho = calcular_ancho(results, 15, width)
-hom_izq_ancho = calcular_ancho(results, 11, width)
-mun_der = height - calcular_altura(results, 16, height)
-mun_der_ancho = calcular_ancho(results, 16, width)
-hom_der_ancho = calcular_ancho(results, 12, width)
+                        mun_izq = height - calcular_altura(results, 15, height)
+                        mun_izq_ancho = calcular_ancho(results, 15, width)
+                        hom_izq_ancho = calcular_ancho(results, 11, width)
+                        mun_der = height - calcular_altura(results, 16, height)
+                        mun_der_ancho = calcular_ancho(results, 16, width)
+                        hom_der_ancho = calcular_ancho(results, 12, width)
 
-# Guardar series para gráficas
-list_mun_izq.append(float(mun_izq))
-list_mun_der.append(float(mun_der))
-list_mun_izq_ancho.append(float(mun_izq_ancho))
-list_mun_der_ancho.append(float(mun_der_ancho))
-list_cad_izq.append(float(cad_izq))
-list_cad_der.append(float(cad_der))
-head_alt = height - calcular_altura(results, 0, height)
-list_head_alt.append(float(head_alt))
-hip_l = height - calcular_altura(results, 23, height)
-hip_r = height - calcular_altura(results, 24, height)
-list_hip.append(float((hip_l + hip_r) / 2.0))
+                        # Guardar series para gráficas
+                        list_mun_izq.append(float(mun_izq))
+                        list_mun_der.append(float(mun_der))
+                        list_mun_izq_ancho.append(float(mun_izq_ancho))
+                        list_mun_der_ancho.append(float(mun_der_ancho))
+                        list_cad_izq.append(float(cad_izq))
+                        list_cad_der.append(float(cad_der))
+                        head_alt = height - calcular_altura(results, 0, height)
+                        list_head_alt.append(float(head_alt))
+                        hip_l = height - calcular_altura(results, 23, height)
+                        hip_r = height - calcular_altura(results, 24, height)
+                        list_hip.append(float((hip_l + hip_r) / 2.0))
 
-# Ángulos de codo, rodilla y axila (armpit)
-try:
-    ang_elbow_l = angle_calculate(results, 11, 13, 15, width, height)
-    ang_elbow_r = angle_calculate(results, 12, 14, 16, width, height)
-    list_angle_cod_izq.append(float(ang_elbow_l))
-    list_angle_cod_der.append(float(ang_elbow_r))
-except Exception:
-    list_angle_cod_izq.append(0.0)
-    list_angle_cod_der.append(0.0)
-try:
-    ang_knee_l = angle_calculate(results, 23, 25, 27, width, height)
-    ang_knee_r = angle_calculate(results, 24, 26, 28, width, height)
-    list_angle_rod_izq.append(float(ang_knee_l))
-    list_angle_rod_der.append(float(ang_knee_r))
-except Exception:
-    list_angle_rod_izq.append(0.0)
-    list_angle_rod_der.append(0.0)
-try:
-    ang_axi_l = angle_calculate(results, 13, 11, 23, width, height)
-    ang_axi_r = angle_calculate(results, 14, 12, 24, width, height)
-    list_angle_axi_izq.append(float(ang_axi_l))
-    list_angle_axi_der.append(float(ang_axi_r))
-except Exception:
-    list_angle_axi_izq.append(0.0)
-    list_angle_axi_der.append(0.0)
+                        # Ángulos de codo, rodilla y axila (armpit)
+                        try:
+                            ang_elbow_l = angle_calculate(results, 11, 13, 15, width, height)
+                            ang_elbow_r = angle_calculate(results, 12, 14, 16, width, height)
+                            list_angle_cod_izq.append(float(ang_elbow_l))
+                            list_angle_cod_der.append(float(ang_elbow_r))
+                        except Exception:
+                            list_angle_cod_izq.append(0.0)
+                            list_angle_cod_der.append(0.0)
+                        try:
+                            ang_knee_l = angle_calculate(results, 23, 25, 27, width, height)
+                            ang_knee_r = angle_calculate(results, 24, 26, 28, width, height)
+                            list_angle_rod_izq.append(float(ang_knee_l))
+                            list_angle_rod_der.append(float(ang_knee_r))
+                        except Exception:
+                            list_angle_rod_izq.append(0.0)
+                            list_angle_rod_der.append(0.0)
+                        try:
+                            ang_axi_l = angle_calculate(results, 13, 11, 23, width, height)
+                            ang_axi_r = angle_calculate(results, 14, 12, 24, width, height)
+                            list_angle_axi_izq.append(float(ang_axi_l))
+                            list_angle_axi_der.append(float(ang_axi_r))
+                        except Exception:
+                            list_angle_axi_izq.append(0.0)
+                            list_angle_axi_der.append(0.0)
 
                         # Contador de frames para ciclo
                         cont_frames += 1
@@ -256,81 +257,79 @@ except Exception:
                         # Conteo de paladas (izquierda)
                         if (mun_izq <= aux_palada_izq) and (token_izq is False) and (token_hand == "LEFT") and (mun_der_ancho > hom_der_ancho):
                             cont_paladas += 1
-token_izq = True
-token_hand = "RIGHT"
-if cont_paladas % 3 == 0:
-    tiempo_ciclo_paladas = cont_frames / fps
-    spm = calcular_ritmo(tiempo_ciclo_paladas)
-    spm_ajuste = calcular_ritmo_ajuste(tiempo_ciclo_paladas)
-    cont_frames = 0
-    current_time_sec = (pos / fps) if fps else 0.0
-    list_stroke_rate.append(float(spm_ajuste))
-    list_ciclo_palada.append(float(tiempo_ciclo_paladas))
-    list_aux.append(float(current_time_sec))
-    await self.send_json({"type": "metric", "spm": spm_ajuste, "strokes": cont_paladas})
-    await self.send_json({"type": "text", "text": f"SPM estimado: {spm_ajuste}. Mantén técnica estable."})
-elif (mun_izq >= aux_palada_izq) and (token_izq is True):
-    token_izq = False
+                            token_izq = True
+                            token_hand = "RIGHT"
+                            if cont_paladas % 3 == 0:
+                                tiempo_ciclo_paladas = cont_frames / fps
+                                spm = calcular_ritmo(tiempo_ciclo_paladas)
+                                spm_ajuste = calcular_ritmo_ajuste(tiempo_ciclo_paladas)
+                                cont_frames = 0
+                                current_time_sec = (pos / fps) if fps else 0.0
+                                list_stroke_rate.append(float(spm_ajuste))
+                                list_ciclo_palada.append(float(tiempo_ciclo_paladas))
+                                list_aux.append(float(current_time_sec))
+                                await self.send_json({"type": "metric", "spm": spm_ajuste, "strokes": cont_paladas})
+                                await self.send_json({"type": "text", "text": f"SPM estimado: {spm_ajuste}. Mantén técnica estable."})
+                        elif (mun_izq >= aux_palada_izq) and (token_izq is True):
+                            token_izq = False
 
                         # Conteo de paladas (derecha)
                         if (mun_der <= aux_palada_der) and (token_der is False) and (token_hand == "RIGHT") and (mun_izq_ancho < hom_izq_ancho):
                             cont_paladas += 1
-token_der = True
-token_hand = "LEFT"
-if cont_paladas % 3 == 0:
-    tiempo_ciclo_paladas = cont_frames / fps
-    spm = calcular_ritmo(tiempo_ciclo_paladas)
-    spm_ajuste = calcular_ritmo_ajuste(tiempo_ciclo_paladas)
-    cont_frames = 0
-    current_time_sec = (pos / fps) if fps else 0.0
-    list_stroke_rate.append(float(spm_ajuste))
-    list_ciclo_palada.append(float(tiempo_ciclo_paladas))
-    list_aux.append(float(current_time_sec))
-    await self.send_json({"type": "metric", "spm": spm_ajuste, "strokes": cont_paladas})
-    await self.send_json({"type": "text", "text": f"SPM estimado: {spm_ajuste}. Ajusta la rotación del tronco."})
-elif (mun_der >= aux_palada_der) and (token_der is True):
-    token_der = False
+                            token_der = True
+                            token_hand = "LEFT"
+                            if cont_paladas % 3 == 0:
+                                tiempo_ciclo_paladas = cont_frames / fps
+                                spm = calcular_ritmo(tiempo_ciclo_paladas)
+                                spm_ajuste = calcular_ritmo_ajuste(tiempo_ciclo_paladas)
+                                cont_frames = 0
+                                current_time_sec = (pos / fps) if fps else 0.0
+                                list_stroke_rate.append(float(spm_ajuste))
+                                list_ciclo_palada.append(float(tiempo_ciclo_paladas))
+                                list_aux.append(float(current_time_sec))
+                                await self.send_json({"type": "metric", "spm": spm_ajuste, "strokes": cont_paladas})
+                                await self.send_json({"type": "text", "text": f"SPM estimado: {spm_ajuste}. Ajusta la rotación del tronco."})
+                        elif (mun_der >= aux_palada_der) and (token_der is True):
+                            token_der = False
 
                         # Segmentación de fases por altura de manos
                         if (((mun_izq <= ((hom_izq - cad_izq) / 2 + cad_izq)) and (mun_izq > ((hom_izq - cad_izq) / 3 + cad_izq)) and (token_phase in (0, 4))) or
                             ((mun_der <= ((hom_der - cad_der) / 2 + cad_der)) and (mun_der > ((hom_der - cad_der) / 3 + cad_der)) and (token_phase in (0, 4)))):
-phase = "ENTRY"
-token_phase = 1
-if cont_phase_aerial > 0:
-    prom_phase_aerial = round((prom_phase_aerial * 0 + (cont_phase_aerial / metadata)) if prom_phase_aerial == 0 else (((prom_phase_aerial + (cont_phase_aerial / metadata)) / 2)), 2)
-    if (cont_phase_aerial + cont_phase_water) > 0:
-        porc_phase_aerial = round(((cont_phase_aerial / metadata) * 100) / (((cont_phase_aerial / metadata) + (cont_phase_water / metadata))), 2)
-elif (((mun_izq < ((hom_izq - cad_izq) / 3 + cad_izq)) and token_phase == 1) or
-      ((mun_der < ((hom_der - cad_der) / 3 + cad_der)) and token_phase == 1)):
-    phase = "CATCH-PULL"
-    token_phase = 2
-elif (((mun_izq >= ((hom_izq - cad_izq) / 3 + cad_izq)) and (mun_izq < ((hom_izq - cad_izq) / 2 + cad_izq)) and token_phase == 2) or
-      ((mun_der >= ((hom_der - cad_der) / 3 + cad_der)) and (mun_der < ((hom_der - cad_der) / 2 + cad_der)) and token_phase == 2)):
-    phase = "EXIT"
-    token_phase = 3
-elif (mun_izq >= ((hom_izq - cad_izq) / 2 + cad_izq)) and (token_phase == 3) and (mun_der >= ((hom_der - cad_der) / 2 + cad_der)):
-    phase = "AERIAL"
-    token_phase = 4
-    if cont_phase_water > 0:
-        prom_phase_water = round((prom_phase_water * 0 + (cont_phase_water / metadata)) if prom_phase_water == 0 else (((prom_phase_water + (cont_phase_water / metadata)) / 2)), 2)
-        if (cont_phase_aerial + cont_phase_water) > 0:
-            porc_phase_water = round(((cont_phase_water / metadata) * 100) / (((cont_phase_aerial / metadata) + (cont_phase_water / metadata))), 2)
+                            phase = "ENTRY"
+                            token_phase = 1
+                            if cont_phase_aerial > 0:
+                                prom_phase_aerial = round((prom_phase_aerial * 0 + (cont_phase_aerial / metadata)) if prom_phase_aerial == 0 else (((prom_phase_aerial + (cont_phase_aerial / metadata)) / 2)), 2)
+                                if (cont_phase_aerial + cont_phase_water) > 0:
+                                    porc_phase_aerial = round(((cont_phase_aerial / metadata) * 100) / (((cont_phase_aerial / metadata) + (cont_phase_water / metadata))), 2)
+                        elif (((mun_izq < ((hom_izq - cad_izq) / 3 + cad_izq)) and token_phase == 1) or
+                              ((mun_der < ((hom_der - cad_der) / 3 + cad_der)) and token_phase == 1)):
+                            phase = "CATCH-PULL"
+                            token_phase = 2
+                        elif (((mun_izq >= ((hom_izq - cad_izq) / 3 + cad_izq)) and (mun_izq < ((hom_izq - cad_izq) / 2 + cad_izq)) and token_phase == 2) or
+                              ((mun_der >= ((hom_der - cad_der) / 3 + cad_der)) and (mun_der < ((hom_der - cad_der) / 2 + cad_der)) and token_phase == 2)):
+                            phase = "EXIT"
+                            token_phase = 3
+                        elif (mun_izq >= ((hom_izq - cad_izq) / 2 + cad_izq)) and (token_phase == 3) and (mun_der >= ((hom_der - cad_der) / 2 + cad_der)):
+                            phase = "AERIAL"
+                            token_phase = 4
+                            if cont_phase_water > 0:
+                                prom_phase_water = round((prom_phase_water * 0 + (cont_phase_water / metadata)) if prom_phase_water == 0 else (((prom_phase_water + (cont_phase_water / metadata)) / 2)), 2)
+                                if (cont_phase_aerial + cont_phase_water) > 0:
+                                    porc_phase_water = round(((cont_phase_water / metadata) * 100) / (((cont_phase_aerial / metadata) + (cont_phase_water / metadata))), 2)
 
-# Actualizar contadores de fase
-if token_phase in (1, 2, 3):
-    cont_phase_water += 1
-    if cont_phase_aerial != 0:
-        # ya se contó aerial anterior
-        pass
-    cont_phase_aerial = 0
-elif token_phase == 4:
-    cont_phase_aerial += 1
-    if cont_phase_water != 0:
-        # ya se contó water anterior
-        pass
+                        # Actualizar contadores de fase
+                        if token_phase in (1, 2, 3):
+                            cont_phase_water += 1
+                            if cont_phase_aerial != 0:
+                                pass
+                            cont_phase_aerial = 0
+                        elif token_phase == 4:
+                            cont_phase_aerial += 1
+                            if cont_phase_water != 0:
+                                pass
 
-# Guardar fase para gráfica
-list_phases_segmentation.append(phase)
+                        # Guardar fase para gráfica
+                        list_phases_segmentation.append(phase)
 
                         # Overlays de información
                         # Banda superior: strokes, SPM, lado y ángulo de rotación
@@ -355,7 +354,7 @@ list_phases_segmentation.append(phase)
                         cv2.putText(frame, f"AAT: {prom_phase_aerial}s", (ancho - 110, alto - 50), 1, 1, (0, 255, 0), 1)
                         cv2.putText(frame, f"AWT: {prom_phase_water}s", (ancho - 110, alto - 30), 1, 1, (0, 255, 0), 1)
 
-                    # Encode y envío del frame
+                    # Encode y envío del frame (siempre)
                     ret, buf = cv2.imencode('.jpg', frame)
                     if ret:
                         jpg_b64 = base64.b64encode(buf.tobytes()).decode()
@@ -372,6 +371,29 @@ list_phases_segmentation.append(phase)
                     await asyncio.sleep(0.005)
                     i += 1
 
+            # Generar gráficas y enviar URLs al finalizar
+            try:
+                out_dir = os.path.join(settings.MEDIA_ROOT, "results", str(self.job_id))
+                os.makedirs(out_dir, exist_ok=True)
+                chart_files = generate_charts(
+                    out_dir,
+                    list_mun_izq_ancho=list_mun_izq_ancho,
+                    list_mun_der_ancho=list_mun_der_ancho,
+                    list_mun_izq=list_mun_izq,
+                    list_mun_der=list_mun_der,
+                    list_angle_axi_izq=list_angle_axi_izq,
+                    list_angle_axi_der=list_angle_axi_der,
+                    list_head_alt=list_head_alt,
+                    list_hip=list_hip,
+                    list_stroke_rate=list_stroke_rate,
+                    list_aux=list_aux,
+                )
+                charts_urls = {k: f"{settings.MEDIA_URL}results/{self.job_id}/{v}" for k, v in chart_files.items()}
+                await self.send_json({"type": "charts", "images": charts_urls})
+            except Exception as chart_err:
+                await self.send_json({"type": "text", "text": f"No se pudieron generar gráficas: {chart_err}"})
+
+            # Completar
             await self.send_json({
                 "type": "complete",
                 "processed_video_url": f"/media/videos/{self.job_id}.mp4",
@@ -383,7 +405,6 @@ list_phases_segmentation.append(phase)
                 cap.release()
             except Exception:
                 pass
-
 
     async def send_json(self, data: dict):
         await self.send(text_data=json.dumps(data))
