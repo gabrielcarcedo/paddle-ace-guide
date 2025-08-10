@@ -250,22 +250,24 @@ const Index: React.FC = () => {
   // Generación periódica de notas del coach via LLM (si hay API key)
   useEffect(() => {
     if (!isLoading || !hfKey) return;
-    if (!liveSeries.length) return;
     const now = Date.now();
     if (genRef.current.running || now - genRef.current.last < 6000) return;
 
     const recent = liveSeries.slice(-15);
     const avg = (arr: number[]) => (arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0);
-    const spmAvg = avg(recent.map((r) => r.spm || 0));
+    const spmAvg = avg(recent.map((r) => r.spm || 0)) || liveSPM || 0;
     const headAvg = avg(recent.map((r) => r.head || 0));
     const hipAvg = avg(recent.map((r) => r.hip || 0));
     const leftAvg = avg(recent.map((r) => r.left_hand || 0));
     const rightAvg = avg(recent.map((r) => r.right_hand || 0));
     const rotAvg = avg(recent.map((r) => r.rotation || 0));
 
+    const hasSignal = spmAvg || leftAvg || rightAvg || headAvg || hipAvg || rotAvg || liveStrokes;
+    if (!hasSignal) return;
+
     genRef.current.running = true;
     generateCoachNote(hfKey, {
-      spm: spmAvg || liveSPM,
+      spm: spmAvg,
       strokes: liveStrokes,
       head_height: headAvg,
       hip_height: hipAvg,
@@ -275,9 +277,12 @@ const Index: React.FC = () => {
       notesSoFar: liveTexts.slice(-5),
     })
       .then((text) => {
-        if (text) setLiveTexts((prev) => [...prev, `Coach (LLM): ${text}`]);
+        if (text?.trim()) setLiveTexts((prev) => [...prev, `Coach (LLM): ${text.trim()}`]);
       })
-      .catch((err) => console.error("LLM error", err))
+      .catch((err) => {
+        console.error("LLM error", err);
+        toast.error("No se pudo generar una nota del coach (HF). Revisa tu token.");
+      })
       .finally(() => {
         genRef.current.running = false;
         genRef.current.last = Date.now();

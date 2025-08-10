@@ -29,21 +29,28 @@ export async function generateCoachNote(
     `Además mantener el ritmo de paladas por minutos, así como la rotación durante la mayor parte del entrenamiento puede mejorar las capacidades físicas y técnicas del atleta. ` +
     `Evita suposiciones no soportadas por datos. No uses emojis.`;
 
-  const res = await fetch("https://api-inference.huggingface.co/models/google/flan-t5-small", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      inputs: prompt,
-      parameters: {
-        max_new_tokens: 80,
-        temperature: 0.4,
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+  const res = await fetch(
+    "https://api-inference.huggingface.co/models/google/flan-t5-small",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
       },
-      options: { wait_for_model: true },
-    }),
-  });
+      body: JSON.stringify({
+        inputs: prompt,
+        parameters: {
+          max_new_tokens: 80,
+          temperature: 0.4,
+        },
+        options: { wait_for_model: true },
+      }),
+      signal: controller.signal,
+    }
+  );
+  clearTimeout(timeout);
 
   if (!res.ok) {
     const t = await res.text().catch(() => "");
