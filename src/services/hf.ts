@@ -30,9 +30,9 @@ export async function generateCoachNote(
     `Evita suposiciones no soportadas por datos. No uses emojis.`;
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15000);
+  const timeout = setTimeout(() => controller.abort(), 40000);
   const res = await fetch(
-    "https://api-inference.huggingface.co/models/google/flan-t5-small",
+    "https://api-inference.huggingface.co/models/google/flan-t5-base",
     {
       method: "POST",
       headers: {
