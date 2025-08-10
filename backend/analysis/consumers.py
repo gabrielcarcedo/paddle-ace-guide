@@ -28,6 +28,7 @@ from .utils import (
     calcular_altura,
     calcular_ancho,
     angle_calculate,
+    hf_generate_coach_note,
 )
 from .charts import generate_charts
 
@@ -78,8 +79,16 @@ class ProcessingConsumer(AsyncWebsocketConsumer):
                     "progress": (i + 1) / total,
                 })
                 if i % 10 == 0:
-                    await self.send_json({"type": "metric", "spm": 40 + i // 10, "strokes": i})
-                    await self.send_json({"type": "text", "text": f"Buen ritmo, mantén la cadencia (tick {i})."})
+                    spm_sim = 40 + i // 10
+                    await self.send_json({"type": "metric", "spm": spm_sim, "strokes": i})
+                    try:
+                        if getattr(settings, "HUGGINGFACE_API_KEY", ""):
+                            note = await hf_generate_coach_note(settings.HUGGINGFACE_API_KEY, spm_sim, i)
+                        else:
+                            note = f"Buen ritmo, mantén la cadencia (tick {i})."
+                    except Exception:
+                        note = f"Buen ritmo, mantén la cadencia (tick {i})."
+                    await self.send_json({"type": "text", "text": note})
             await self.send_json({"type": "complete", "processed_video_url": f"/media/videos/{self.job_id}.mp4"})
             return
 
@@ -269,8 +278,14 @@ class ProcessingConsumer(AsyncWebsocketConsumer):
                                 list_ciclo_palada.append(float(tiempo_ciclo_paladas))
                                 list_aux.append(float(current_time_sec))
                                 await self.send_json({"type": "metric", "spm": spm_ajuste, "strokes": cont_paladas})
-                                await self.send_json({"type": "text", "text": f"SPM estimado: {spm_ajuste}. Mantén técnica estable."})
-                        elif (mun_izq >= aux_palada_izq) and (token_izq is True):
+                                try:
+                                    if getattr(settings, "HUGGINGFACE_API_KEY", ""):
+                                        note = await hf_generate_coach_note(settings.HUGGINGFACE_API_KEY, spm_ajuste, cont_paladas)
+                                    else:
+                                        note = f"SPM estimado: {spm_ajuste}. Mantén técnica estable."
+                                except Exception:
+                                    note = f"SPM estimado: {spm_ajuste}. Mantén técnica estable."
+                                await self.send_json({"type": "text", "text": note})
                             token_izq = False
 
                         # Conteo de paladas (derecha)
@@ -288,8 +303,14 @@ class ProcessingConsumer(AsyncWebsocketConsumer):
                                 list_ciclo_palada.append(float(tiempo_ciclo_paladas))
                                 list_aux.append(float(current_time_sec))
                                 await self.send_json({"type": "metric", "spm": spm_ajuste, "strokes": cont_paladas})
-                                await self.send_json({"type": "text", "text": f"SPM estimado: {spm_ajuste}. Ajusta la rotación del tronco."})
-                        elif (mun_der >= aux_palada_der) and (token_der is True):
+                                try:
+                                    if getattr(settings, "HUGGINGFACE_API_KEY", ""):
+                                        note = await hf_generate_coach_note(settings.HUGGINGFACE_API_KEY, spm_ajuste, cont_paladas)
+                                    else:
+                                        note = f"SPM estimado: {spm_ajuste}. Ajusta la rotación del tronco."
+                                except Exception:
+                                    note = f"SPM estimado: {spm_ajuste}. Ajusta la rotación del tronco."
+                                await self.send_json({"type": "text", "text": note})
                             token_der = False
 
                         # Segmentación de fases por altura de manos

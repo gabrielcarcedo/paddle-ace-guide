@@ -79,4 +79,7 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+# API keys (prototipo, usa variables de entorno en producción)
+HUGGINGFACE_API_KEY = "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"
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

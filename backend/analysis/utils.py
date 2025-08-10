@@ -1,7 +1,8 @@
 # Utilidades reales de análisis basadas en las funciones provistas
 from math import acos, degrees
 import numpy as np
-
+import asyncio
+import requests
 # Cálculos geométricos y métricas
 
 def calcular_punto_angle(results, a: int, b: int, width: int, height: int):
@@ -103,3 +104,41 @@ def angle_calculate(results, a: int, b: int, c: int, width: int, height: int) ->
         angle = 0
 
     return float(angle)
+
+# --- Hugging Face LLM helper ---
+
+def _hf_request(api_key: str, prompt: str) -> str:
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+    payload = {
+        "inputs": prompt,
+        "parameters": {"max_new_tokens": 80, "temperature": 0.4},
+    }
+    try:
+        resp = requests.post(
+            "https://api-inference.huggingface.co/models/google/flan-t5-small",
+            headers=headers,
+            json=payload,
+            timeout=12,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        if isinstance(data, list):
+            text = (data[0] or {}).get("generated_text")
+        else:
+            text = data.get("generated_text")
+        if not text:
+            text = "Ajusta la técnica manteniendo cadencia constante y empuje eficiente."
+        return text.strip()
+    except Exception:
+        return "Ajusta la técnica manteniendo cadencia constante y empuje eficiente."
+
+async def hf_generate_coach_note(api_key: str, spm: int = 0, strokes: int = 0) -> str:
+    if not api_key:
+        return "Ajusta la técnica manteniendo cadencia constante y empuje eficiente."
+    prompt = (
+        "Eres un coach experto de canotaje. Da una breve observación en español, en 1-2 frases, clara y accionable.\n"
+        f"Datos actuales: SPM={int(spm)}, strokes={int(strokes)}.\n"
+        "Evita suposiciones no soportadas por datos. No uses emojis."
+    )
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, _hf_request, api_key, prompt)
