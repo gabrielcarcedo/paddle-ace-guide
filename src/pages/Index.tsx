@@ -4,9 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { API_BASE } from "@/config";
-import { uploadVideo, startJob } from "@/services/api";
+import { startJob } from "@/services/api";
 import LiveCharts from "@/components/LiveCharts";
 
 interface Metrics {
@@ -266,11 +267,27 @@ const Index: React.FC = () => {
   return (
     <div>
       <header className="border-b">
-        <div className="container mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold tracking-tight">Análisis biomecánico de canotaje</h1>
-          <p className="text-muted-foreground mt-1">
-            Carga un video y visualiza resultados frame a frame, con textos del coach generados en tiempo real.
-          </p>
+        <div className="container mx-auto px-4 py-6 space-y-4">
+          <img
+            src="/placeholder.svg"
+            alt="Banner principal Paddle Wise Coach"
+            className="w-full h-40 md:h-56 object-cover rounded-md border"
+            loading="eager"
+          />
+          <div className="flex justify-center">
+            <img
+              src="/favicon.ico"
+              alt="Logo Paddle Wise Coach"
+              className="h-16 w-16 object-contain"
+              loading="lazy"
+            />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Análisis biomecánico de canotaje</h1>
+            <p className="text-muted-foreground mt-1">
+              Carga un video y visualiza resultados frame a frame, con textos del coach generados en tiempo real.
+            </p>
+          </div>
         </div>
       </header>
 
@@ -308,8 +325,10 @@ const Index: React.FC = () => {
               <CardContent className="space-y-4">
                 <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                   <div>Estado: {isLoading ? "Procesando" : processedUrl ? "Completado" : "Listo"}</div>
-                  <div>Progreso: {(liveProgress * 100).toFixed(0)}%</div>
                   <div>Strokes: {liveStrokes} | SPM: {liveSPM}</div>
+                </div>
+                <div>
+                  <Progress value={liveProgress * 100} className="h-3" aria-label="Progreso de procesamiento" />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -356,8 +375,8 @@ const Index: React.FC = () => {
       </main>
 
       <footer className="border-t">
-        <div className="container mx-auto px-4 py-6 text-sm text-muted-foreground">
-          <span>Backend esperado en: {API_BASE}</span>
+        <div className="container mx-auto px-4 py-6 text-sm text-muted-foreground text-center">
+          <span>AiSA 2025 ABModel</span>
         </div>
       </footer>
     </div>

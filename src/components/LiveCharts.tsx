@@ -59,9 +59,14 @@ const LiveCharts: React.FC<LiveChartsProps> = ({ data, images }) => {
       {images && images.length > 0 && (
         <section>
           <h2 className="text-lg font-semibold">Gráficas generadas (backend)</h2>
-          <div className="flex flex-col gap-4">
-            {images.map((src, i) => (
-              <img key={i} src={src} alt={`gráfica biomecánica ${i + 1}`} loading="lazy" className="w-full rounded border" />
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {images.slice(0, 2).map((src, i) => (
+                <img key={i} src={src} alt={`gráfica biomecánica ${i + 1}`} loading="lazy" className="w-full rounded border" />
+              ))}
+            </div>
+            {images.slice(2).map((src, i) => (
+              <img key={i + 2} src={src} alt={`gráfica biomecánica ${i + 3}`} loading="lazy" className="w-full rounded border" />
             ))}
           </div>
         </section>
