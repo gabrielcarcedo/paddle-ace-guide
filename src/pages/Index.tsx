@@ -53,6 +53,7 @@ const Index: React.FC = () => {
   const [coachText, setCoachText] = useState<string>("");
   const [ttsUrl, setTtsUrl] = useState<string | null>(null);
   const [metrics, setMetrics] = useState<Metrics | null>(null);
+  const [chartImages, setChartImages] = useState<string[]>([]);
 
   // Live streaming state
   const wsRef = useRef<WebSocket | null>(null);
@@ -88,6 +89,7 @@ const Index: React.FC = () => {
     setTtsUrl(null);
     setLiveFrame(null);
     setLiveTexts([]);
+    setChartImages([]);
     if (f) setOriginalUrl(URL.createObjectURL(f));
   };
 
@@ -101,6 +103,7 @@ const Index: React.FC = () => {
     setMetrics(null);
     setCoachText("");
     setTtsUrl(null);
+    setChartImages([]);
     try {
       const data = await startJob(file);
       setJobId(data.job_id);
@@ -129,6 +132,11 @@ const Index: React.FC = () => {
               break;
             case "text":
               if (msg.text) setLiveTexts((prev) => [...prev, msg.text]);
+              break;
+            case "charts":
+              if (Array.isArray(msg.urls)) {
+                setChartImages(msg.urls.map((u: string) => absolutize(u)));
+              }
               break;
             case "complete":
               if (msg.processed_video_url) setProcessedUrl(absolutize(msg.processed_video_url));
@@ -217,7 +225,7 @@ const Index: React.FC = () => {
         <Tabs defaultValue="procesamiento" className="w-full">
           <TabsList>
             <TabsTrigger value="procesamiento">Procesamiento</TabsTrigger>
-            <TabsTrigger value="graficas" disabled={!metrics}>Gráficas</TabsTrigger>
+            <TabsTrigger value="graficas" disabled={!metrics && chartImages.length === 0}>Gráficas</TabsTrigger>
           </TabsList>
 
           <TabsContent value="procesamiento" className="space-y-4">
@@ -256,14 +264,8 @@ const Index: React.FC = () => {
 
                 <Separator />
 
-                <div className="space-y-2">
-                  <h3 className="font-semibold">Video final procesado</h3>
-                  {processedUrl ? (
-                    <video controls className="w-full rounded-lg" src={processedUrl} />
-                  ) : (
-                    <p className="text-sm text-muted-foreground">Se mostrará aquí cuando finalice el procesamiento.</p>
-                  )}
-                </div>
+                {/* Sección de video final procesado ocultada temporalmente */}
+                {null}
               </CardContent>
             </Card>
           </TabsContent>
@@ -274,24 +276,36 @@ const Index: React.FC = () => {
                 <CardTitle>Evolución de métricas</CardTitle>
               </CardHeader>
               <CardContent>
-                {metrics ? (
+                {(chartImages.length > 0 || metrics) ? (
                   <div className="space-y-6">
-                    <section>
-                      <h2 className="text-lg font-semibold">Ritmo y ciclo</h2>
-                      <div className="h-64">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="t" tick={{ fontSize: 12 }} label={{ value: "t (s)", position: "insideBottomRight", offset: -5 }} />
-                            <YAxis tick={{ fontSize: 12 }} />
-                            <ReTooltip />
-                            <Legend />
-                            <Line dot={false} type="monotone" dataKey="stroke_rate" stroke="hsl(var(--primary))" name="SPM" />
-                            <Line dot={false} type="monotone" dataKey="cycle_time" stroke="hsl(var(--muted-foreground))" name="Tiempo de ciclo" />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </section>
+                    {chartImages.length > 0 && (
+                      <section>
+                        <h2 className="text-lg font-semibold">Gráficas generadas</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {chartImages.map((src, i) => (
+                            <img key={i} src={src} alt={`gráfica biomecánica ${i + 1}`} loading="lazy" className="w-full rounded border" />
+                          ))}
+                        </div>
+                      </section>
+                    )}
+                    {metrics && (
+                      <section>
+                        <h2 className="text-lg font-semibold">Ritmo y ciclo</h2>
+                        <div className="h-64">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="t" tick={{ fontSize: 12 }} label={{ value: "t (s)", position: "insideBottomRight", offset: -5 }} />
+                              <YAxis tick={{ fontSize: 12 }} />
+                              <ReTooltip />
+                              <Legend />
+                              <Line dot={false} type="monotone" dataKey="stroke_rate" stroke="hsl(var(--primary))" name="SPM" />
+                              <Line dot={false} type="monotone" dataKey="cycle_time" stroke="hsl(var(--muted-foreground))" name="Tiempo de ciclo" />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </section>
+                    )}
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground">No hay datos para graficar todavía.</p>
