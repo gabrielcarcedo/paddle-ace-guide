@@ -7,16 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { API_BASE } from "@/config";
 import { uploadVideo, startJob } from "@/services/api";
-import {
-  LineChart,
-  Line,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-  Tooltip as ReTooltip,
-  ResponsiveContainer,
-  Legend,
-} from "recharts";
+import LiveCharts from "@/components/LiveCharts";
 
 interface Metrics {
   stroke_rate?: number[];
@@ -63,6 +54,8 @@ const Index: React.FC = () => {
   const [liveSPM, setLiveSPM] = useState<number>(0);
   const [liveStrokes, setLiveStrokes] = useState<number>(0);
   const [liveProgress, setLiveProgress] = useState<number>(0);
+  const [liveSeries, setLiveSeries] = useState<{ t: number; spm?: number; strokes?: number }[]>([]);
+  const startRef = useRef<number | null>(null);
 
   useEffect(() => {
     document.title = "Análisis biomecánico de canotaje | Paddle Wise Coach";
@@ -117,6 +110,8 @@ const Index: React.FC = () => {
       setLiveSPM(0);
       setLiveStrokes(0);
       setLiveProgress(0);
+      startRef.current = Date.now();
+      setLiveSeries([]);
 
       ws.onmessage = (ev) => {
         try {
@@ -129,6 +124,19 @@ const Index: React.FC = () => {
             case "metric":
               if (typeof msg.spm === "number") setLiveSPM(msg.spm);
               if (typeof msg.strokes === "number") setLiveStrokes(msg.strokes);
+              setLiveSeries((prev) => {
+                const last = prev[prev.length - 1];
+                const t0 = startRef.current ?? Date.now();
+                const t = (Date.now() - t0) / 1000;
+                return [
+                  ...prev,
+                  {
+                    t,
+                    spm: typeof msg.spm === "number" ? msg.spm : last?.spm,
+                    strokes: typeof msg.strokes === "number" ? msg.strokes : last?.strokes,
+                  },
+                ];
+              });
               break;
             case "text":
               if (msg.text) setLiveTexts((prev) => [...prev, msg.text]);
@@ -273,43 +281,10 @@ const Index: React.FC = () => {
           <TabsContent value="graficas">
             <Card>
               <CardHeader>
-                <CardTitle>Evolución de métricas</CardTitle>
+                <CardTitle>Dashboard de gráficas</CardTitle>
               </CardHeader>
               <CardContent>
-                {(chartImages.length > 0 || metrics) ? (
-                  <div className="space-y-6">
-                    {chartImages.length > 0 && (
-                      <section>
-                        <h2 className="text-lg font-semibold">Gráficas generadas</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {chartImages.map((src, i) => (
-                            <img key={i} src={src} alt={`gráfica biomecánica ${i + 1}`} loading="lazy" className="w-full rounded border" />
-                          ))}
-                        </div>
-                      </section>
-                    )}
-                    {metrics && (
-                      <section>
-                        <h2 className="text-lg font-semibold">Ritmo y ciclo</h2>
-                        <div className="h-64">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                              <CartesianGrid strokeDasharray="3 3" />
-                              <XAxis dataKey="t" tick={{ fontSize: 12 }} label={{ value: "t (s)", position: "insideBottomRight", offset: -5 }} />
-                              <YAxis tick={{ fontSize: 12 }} />
-                              <ReTooltip />
-                              <Legend />
-                              <Line dot={false} type="monotone" dataKey="stroke_rate" stroke="hsl(var(--primary))" name="SPM" />
-                              <Line dot={false} type="monotone" dataKey="cycle_time" stroke="hsl(var(--muted-foreground))" name="Tiempo de ciclo" />
-                            </LineChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </section>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">No hay datos para graficar todavía.</p>
-                )}
+                <LiveCharts data={liveSeries} images={chartImages} />
               </CardContent>
             </Card>
           </TabsContent>
