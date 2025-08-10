@@ -335,18 +335,6 @@ const Index: React.FC = () => {
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-3">
-              <Input
-                type="password"
-                placeholder="Hugging Face API key (opcional)"
-                value={hfKey}
-                onChange={(e) => {
-                  setHfKey(e.target.value);
-                  localStorage.setItem("hf_api_key", e.target.value);
-                }}
-              />
-              <span className="text-xs text-muted-foreground">Para generar notas del coach con LLM</span>
-            </div>
 
           </CardContent>
         </Card>

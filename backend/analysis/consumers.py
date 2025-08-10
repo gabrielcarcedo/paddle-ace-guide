@@ -122,7 +122,7 @@ class ProcessingConsumer(AsyncWebsocketConsumer):
             token_der = False
             token_hand = "LEFT"
             aux_hand = ""
-            aux_angle = 0.0
+            rot_angle = 0.0
 
             # Series para gráficas
             list_angle_rod_izq = []
@@ -199,11 +199,11 @@ class ProcessingConsumer(AsyncWebsocketConsumer):
 
                         # Mantener ángulo máximo por mano
                         if aux_hand == token_hand:
-                            if aux_angle < hombro_angle:
-                                aux_angle = hombro_angle
+                            if rot_angle < hombro_angle:
+                                rot_angle = hombro_angle
                         else:
                             aux_hand = token_hand
-                            aux_angle = 0
+                            rot_angle = 0
 
                         # Alturas y anchos relevantes
                         hom_izq = height - calcular_altura(results, 11, height)
@@ -232,7 +232,8 @@ class ProcessingConsumer(AsyncWebsocketConsumer):
                         list_head_alt.append(float(head_alt))
                         hip_l = height - calcular_altura(results, 23, height)
                         hip_r = height - calcular_altura(results, 24, height)
-                        list_hip.append(float((hip_l + hip_r) / 2.0))
+                        hip_height = float((hip_l + hip_r) / 2.0)
+                        list_hip.append(hip_height)
 
                         # Ángulos de codo, rodilla y axila (armpit)
                         try:
@@ -277,10 +278,10 @@ class ProcessingConsumer(AsyncWebsocketConsumer):
                                 list_stroke_rate.append(float(spm_ajuste))
                                 list_ciclo_palada.append(float(tiempo_ciclo_paladas))
                                 list_aux.append(float(current_time_sec))
-                                await self.send_json({"type": "metric", "spm": spm_ajuste, "strokes": cont_paladas})
+                                await self.send_json({"type": "metric", "spm": spm_ajuste, "strokes": cont_paladas, "head_height": head_alt, "hip_height": hip_height, "right_hand_height": mun_der, "left_hand_height": mun_izq, "body_rotation": rot_angle})
                                 try:
                                     if getattr(settings, "HUGGINGFACE_API_KEY", ""):
-                                        note = await hf_generate_coach_note(settings.HUGGINGFACE_API_KEY, spm_ajuste, cont_paladas)
+                                        note = await hf_generate_coach_note(settings.HUGGINGFACE_API_KEY, spm_ajuste, cont_paladas, head_alt, hip_height, mun_der, mun_izq, rot_angle)
                                     else:
                                         note = f"SPM estimado: {spm_ajuste}. Mantén técnica estable."
                                 except Exception:
@@ -302,10 +303,10 @@ class ProcessingConsumer(AsyncWebsocketConsumer):
                                 list_stroke_rate.append(float(spm_ajuste))
                                 list_ciclo_palada.append(float(tiempo_ciclo_paladas))
                                 list_aux.append(float(current_time_sec))
-                                await self.send_json({"type": "metric", "spm": spm_ajuste, "strokes": cont_paladas})
+                                await self.send_json({"type": "metric", "spm": spm_ajuste, "strokes": cont_paladas, "head_height": head_alt, "hip_height": hip_height, "right_hand_height": mun_der, "left_hand_height": mun_izq, "body_rotation": rot_angle})
                                 try:
                                     if getattr(settings, "HUGGINGFACE_API_KEY", ""):
-                                        note = await hf_generate_coach_note(settings.HUGGINGFACE_API_KEY, spm_ajuste, cont_paladas)
+                                        note = await hf_generate_coach_note(settings.HUGGINGFACE_API_KEY, spm_ajuste, cont_paladas, head_alt, hip_height, mun_der, mun_izq, rot_angle)
                                     else:
                                         note = f"SPM estimado: {spm_ajuste}. Ajusta la rotación del tronco."
                                 except Exception:
@@ -355,25 +356,25 @@ class ProcessingConsumer(AsyncWebsocketConsumer):
                         # Overlays de información
                         # Banda superior: strokes, SPM, lado y ángulo de rotación
                         cv2.rectangle(frame, (0, 0), (ancho, 100), (65, 65, 65), -1)
-                        cv2.putText(frame, f"Strokes Count: {cont_paladas}", (30, 53), 1, 1, (0, 255, 0), 1)
+                        cv2.putText(frame, f"Strokes Count: {cont_paladas}", (30, 53), 1, 2, (0, 255, 0), 1)
                         if cont_paladas > 3:
-                            cv2.putText(frame, f"SPM: {int(spm_ajuste)}", (30, 73), 1, 1, (0, 255, 0), 1)
+                            cv2.putText(frame, f"SPM: {int(spm_ajuste)}", (30, 80), 1, 2, (0, 255, 0), 1)
                         if (cont_paladas != 0) and (token_hand == 'LEFT'):
-                            cv2.putText(frame, 'Side: RIGHT', (ancho - 140, 53), 1, 1, (0, 255, 0), 1)
+                            cv2.putText(frame, 'Side: RIGHT', (ancho - 300, 53), 1, 2, (0, 255, 0), 1)
                         elif token_hand == 'RIGHT':
-                            cv2.putText(frame, 'Side: LEFT', (ancho - 140, 53), 1, 1, (0, 255, 0), 1)
-                        cv2.putText(frame, f"Rot Ang: {round(aux_angle, 2)}", (ancho - 140, 73), 1, 1, (0, 255, 0), 1)
+                            cv2.putText(frame, 'Side: LEFT', (ancho - 300, 53), 1, 2, (0, 255, 0), 1)
+                        cv2.putText(frame, f"Rot Ang: {round(rot_angle, 2)}", (ancho - 300, 80), 1, 2, (0, 255, 0), 1)
 
                         # Banda inferior: tiempos y porcentajes de fases
                         cv2.rectangle(frame, (0, alto), (ancho, alto - 80), (65, 65, 65), -1)
                         if cont_phase_aerial > 0:
-                            cv2.putText(frame, f"APT: {round(cont_phase_aerial/metadata,2)}s", (25, alto - 50), 1, 1, (0, 255, 0), 1)
+                            cv2.putText(frame, f"APT: {round(cont_phase_aerial/metadata,2)}s", (25, alto - 50), 1, 2, (0, 255, 0), 1)
                         if cont_phase_water > 0:
-                            cv2.putText(frame, f"WPT: {round(cont_phase_water/metadata,2)}s", (25, alto - 30), 1, 1, (0, 255, 0), 1)
-                        cv2.putText(frame, f"PAT: {porc_phase_aerial}%", (int(ancho/2) - 40, alto - 50), 1, 1, (0, 255, 0), 1)
-                        cv2.putText(frame, f"PWT: {porc_phase_water}%", (int(ancho/2) - 40, alto - 30), 1, 1, (0, 255, 0), 1)
-                        cv2.putText(frame, f"AAT: {prom_phase_aerial}s", (ancho - 110, alto - 50), 1, 1, (0, 255, 0), 1)
-                        cv2.putText(frame, f"AWT: {prom_phase_water}s", (ancho - 110, alto - 30), 1, 1, (0, 255, 0), 1)
+                            cv2.putText(frame, f"WPT: {round(cont_phase_water/metadata,2)}s", (25, alto - 23), 1, 2, (0, 255, 0), 1)
+                        cv2.putText(frame, f"PAT: {porc_phase_aerial}%", (int(ancho/2) - 100, alto - 50), 1, 2, (0, 255, 0), 1)
+                        cv2.putText(frame, f"PWT: {porc_phase_water}%", (int(ancho/2) - 100, alto - 23), 1, 2, (0, 255, 0), 1)
+                        cv2.putText(frame, f"AAT: {prom_phase_aerial}s", (ancho - 200, alto - 50), 1, 2, (0, 255, 0), 1)
+                        cv2.putText(frame, f"AWT: {prom_phase_water}s", (ancho - 200, alto - 23), 1, 2, (0, 255, 0), 1)
 
                     # Encode y envío del frame (siempre)
                     ret, buf = cv2.imencode('.jpg', frame)
