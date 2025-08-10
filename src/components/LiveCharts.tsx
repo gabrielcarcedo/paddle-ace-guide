@@ -1,4 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
+import Lightbox from "yet-another-react-lightbox";
+import Zoom from "yet-another-react-lightbox/plugins/zoom";
+import "yet-another-react-lightbox/styles.css";
 import {
   LineChart,
   Line,
@@ -32,6 +35,9 @@ interface LiveChartsProps {
 }
 
 const LiveCharts: React.FC<LiveChartsProps> = ({ data, images }) => {
+  const [open, setOpen] = useState(false);
+  const [index, setIndex] = useState(0);
+  const slides = (images || []).map((src, i) => ({ src, alt: `gráfica biomecánica ${i + 1}` }));
   const hasCharts = (data && data.length > 0) || (images && images.length > 0);
 
   return (
@@ -62,13 +68,40 @@ const LiveCharts: React.FC<LiveChartsProps> = ({ data, images }) => {
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {images.slice(0, 2).map((src, i) => (
-                <img key={i} src={src} alt={`gráfica biomecánica ${i + 1}`} loading="lazy" className="w-full rounded border" />
+                <img
+                  key={i}
+                  src={src}
+                  alt={`gráfica biomecánica ${i + 1}`}
+                  loading="lazy"
+                  className="w-full rounded border cursor-zoom-in"
+                  onClick={() => {
+                    setIndex(i);
+                    setOpen(true);
+                  }}
+                />
               ))}
             </div>
             {images.slice(2).map((src, i) => (
-              <img key={i + 2} src={src} alt={`gráfica biomecánica ${i + 3}`} loading="lazy" className="w-full rounded border" />
+              <img
+                key={i + 2}
+                src={src}
+                alt={`gráfica biomecánica ${i + 3}`}
+                loading="lazy"
+                className="w-full rounded border cursor-zoom-in"
+                onClick={() => {
+                  setIndex(i + 2);
+                  setOpen(true);
+                }}
+              />
             ))}
           </div>
+          <Lightbox
+            open={open}
+            close={() => setOpen(false)}
+            index={index}
+            slides={slides}
+            plugins={[Zoom]}
+          />
         </section>
       )}
 

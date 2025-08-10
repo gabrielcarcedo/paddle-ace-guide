@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { API_BASE } from "@/config";
 import { startJob } from "@/services/api";
 import LiveCharts from "@/components/LiveCharts";
+import { generateCoachNote } from "@/services/hf";
 
 interface Metrics {
   stroke_rate?: number[];
@@ -46,6 +47,9 @@ const Index: React.FC = () => {
   const [ttsUrl, setTtsUrl] = useState<string | null>(null);
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   const [chartImages, setChartImages] = useState<string[]>([]);
+
+  const [hfKey, setHfKey] = useState<string>(() => localStorage.getItem("hf_api_key") || "");
+  const genRef = useRef<{ last: number; running: boolean }>({ last: 0, running: false });
 
   // Live streaming state
   const wsRef = useRef<WebSocket | null>(null);
@@ -239,6 +243,29 @@ const Index: React.FC = () => {
     }
   };
 
+  // Generación periódica de notas del coach via LLM (si hay API key)
+  useEffect(() => {
+    if (!isLoading || !hfKey) return;
+    if (!liveSeries.length) return;
+    const now = Date.now();
+    if (genRef.current.running || now - genRef.current.last < 6000) return;
+
+    const recent = liveSeries.slice(-15);
+    const avg = (arr: number[]) => (arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0);
+    const spmAvg = avg(recent.map((r) => r.spm || 0));
+
+    genRef.current.running = true;
+    generateCoachNote(hfKey, { spm: spmAvg || liveSPM, strokes: liveStrokes, notesSoFar: liveTexts.slice(-5) })
+      .then((text) => {
+        if (text) setLiveTexts((prev) => [...prev, `Coach (LLM): ${text}`]);
+      })
+      .catch((err) => console.error("LLM error", err))
+      .finally(() => {
+        genRef.current.running = false;
+        genRef.current.last = Date.now();
+      });
+  }, [liveSeries.length, liveSPM, liveStrokes, isLoading, hfKey]);
+
   const absolutize = (url: string) => {
     if (!url) return url;
     if (url.startsWith("http")) return url;
@@ -308,10 +335,23 @@ const Index: React.FC = () => {
                 </span>
               )}
             </div>
+            <div className="flex items-center gap-3">
+              <Input
+                type="password"
+                placeholder="Hugging Face API key (opcional)"
+                value={hfKey}
+                onChange={(e) => {
+                  setHfKey(e.target.value);
+                  localStorage.setItem("hf_api_key", e.target.value);
+                }}
+              />
+              <span className="text-xs text-muted-foreground">Para generar notas del coach con LLM</span>
+            </div>
+
           </CardContent>
         </Card>
 
-        <Tabs defaultValue="procesamiento" className="w-full">
+         <Tabs defaultValue="procesamiento" className="w-full">
           <TabsList>
             <TabsTrigger value="procesamiento">Procesamiento</TabsTrigger>
             <TabsTrigger value="graficas">Gráficas</TabsTrigger>
@@ -357,8 +397,8 @@ const Index: React.FC = () => {
 
                 {/* Sección de video final procesado ocultada temporalmente */}
                 {null}
-              </CardContent>
-            </Card>
+          </CardContent>
+        </Card>
           </TabsContent>
 
           <TabsContent value="graficas">
