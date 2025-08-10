@@ -253,9 +253,23 @@ const Index: React.FC = () => {
     const recent = liveSeries.slice(-15);
     const avg = (arr: number[]) => (arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0);
     const spmAvg = avg(recent.map((r) => r.spm || 0));
+    const headAvg = avg(recent.map((r) => r.head || 0));
+    const hipAvg = avg(recent.map((r) => r.hip || 0));
+    const leftAvg = avg(recent.map((r) => r.left_hand || 0));
+    const rightAvg = avg(recent.map((r) => r.right_hand || 0));
+    const rotAvg = avg(recent.map((r) => r.rotation || 0));
 
     genRef.current.running = true;
-    generateCoachNote(hfKey, { spm: spmAvg || liveSPM, strokes: liveStrokes, notesSoFar: liveTexts.slice(-5) })
+    generateCoachNote(hfKey, {
+      spm: spmAvg || liveSPM,
+      strokes: liveStrokes,
+      head_height: headAvg,
+      hip_height: hipAvg,
+      right_hand_height: rightAvg,
+      left_hand_height: leftAvg,
+      body_rotation: rotAvg,
+      notesSoFar: liveTexts.slice(-5),
+    })
       .then((text) => {
         if (text) setLiveTexts((prev) => [...prev, `Coach (LLM): ${text}`]);
       })
@@ -335,7 +349,42 @@ const Index: React.FC = () => {
                 </span>
               )}
             </div>
-
+            <div className="space-y-2">
+              <div className="text-sm font-medium">Hugging Face API key</div>
+              <div className="flex gap-2">
+                <Input
+                  type="password"
+                  placeholder="hf_xxx..."
+                  value={hfKey}
+                  onChange={(e) => setHfKey(e.target.value)}
+                />
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    localStorage.setItem("hf_api_key", hfKey);
+                    toast.success("HF key guardada");
+                  }}
+                  disabled={!hfKey}
+                >
+                  Guardar
+                </Button>
+                {hfKey && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setHfKey("");
+                      localStorage.removeItem("hf_api_key");
+                      toast.success("HF key eliminada");
+                    }}
+                  >
+                    Borrar
+                  </Button>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Se usa para generar notas del coach con Hugging Face Inference.
+              </p>
+            </div>
           </CardContent>
         </Card>
 
