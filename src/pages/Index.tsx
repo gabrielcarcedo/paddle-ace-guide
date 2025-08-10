@@ -50,6 +50,10 @@ const Index: React.FC = () => {
 
   const [hfKey, setHfKey] = useState<string>(() => localStorage.getItem("hf_api_key") || "");
   const genRef = useRef<{ last: number; running: boolean }>({ last: 0, running: false });
+  const hfKeyRef = useRef<string>("");
+  useEffect(() => {
+    hfKeyRef.current = hfKey;
+  }, [hfKey]);
 
   // Live streaming state
   const wsRef = useRef<WebSocket | null>(null);
@@ -206,7 +210,7 @@ const Index: React.FC = () => {
               });
               break;
             case "text":
-              if (msg.text) setLiveTexts((prev) => [...prev, msg.text]);
+              if (msg.text && !hfKeyRef.current) setLiveTexts((prev) => [...prev, msg.text]);
               break;
             case "charts":
               if (Array.isArray(msg.urls)) {
