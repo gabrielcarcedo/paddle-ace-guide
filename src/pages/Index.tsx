@@ -225,7 +225,7 @@ const Index: React.FC = () => {
         <Tabs defaultValue="procesamiento" className="w-full">
           <TabsList>
             <TabsTrigger value="procesamiento">Procesamiento</TabsTrigger>
-            <TabsTrigger value="graficas" disabled={!metrics && chartImages.length === 0}>Gráficas</TabsTrigger>
+            <TabsTrigger value="graficas">Gráficas</TabsTrigger>
           </TabsList>
 
           <TabsContent value="procesamiento" className="space-y-4">
