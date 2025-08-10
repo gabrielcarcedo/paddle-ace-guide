@@ -54,7 +54,23 @@ const Index: React.FC = () => {
   const [liveSPM, setLiveSPM] = useState<number>(0);
   const [liveStrokes, setLiveStrokes] = useState<number>(0);
   const [liveProgress, setLiveProgress] = useState<number>(0);
-  const [liveSeries, setLiveSeries] = useState<{ t: number; spm?: number; strokes?: number }[]>([]);
+  const [liveSeries, setLiveSeries] = useState<
+    {
+      t: number;
+      spm?: number;
+      // alturas
+      left_hand?: number;
+      right_hand?: number;
+      head?: number;
+      hip?: number;
+      // ángulos
+      rotation?: number;
+      left_axilla?: number;
+      right_axilla?: number;
+      // compat
+      strokes?: number;
+    }[]
+  >([]);
   const startRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -125,7 +141,7 @@ const Index: React.FC = () => {
               if (typeof msg.spm === "number") setLiveSPM(msg.spm);
               if (typeof msg.strokes === "number") setLiveStrokes(msg.strokes);
               setLiveSeries((prev) => {
-                const last = prev[prev.length - 1];
+                const last = (prev[prev.length - 1] ?? {}) as any;
                 const t0 = startRef.current ?? Date.now();
                 const t = (Date.now() - t0) / 1000;
                 return [
@@ -133,6 +149,13 @@ const Index: React.FC = () => {
                   {
                     t,
                     spm: typeof msg.spm === "number" ? msg.spm : last?.spm,
+                    left_hand: typeof msg.left_hand === "number" ? msg.left_hand : last?.left_hand,
+                    right_hand: typeof msg.right_hand === "number" ? msg.right_hand : last?.right_hand,
+                    head: typeof msg.head === "number" ? msg.head : last?.head,
+                    hip: typeof msg.hip === "number" ? msg.hip : last?.hip,
+                    rotation: typeof msg.rotation === "number" ? msg.rotation : last?.rotation,
+                    left_axilla: typeof msg.left_axilla === "number" ? msg.left_axilla : last?.left_axilla,
+                    right_axilla: typeof msg.right_axilla === "number" ? msg.right_axilla : last?.right_axilla,
                     strokes: typeof msg.strokes === "number" ? msg.strokes : last?.strokes,
                   },
                 ];
@@ -144,6 +167,8 @@ const Index: React.FC = () => {
             case "charts":
               if (Array.isArray(msg.urls)) {
                 setChartImages(msg.urls.map((u: string) => absolutize(u)));
+              } else if (msg.images && typeof msg.images === "object") {
+                setChartImages(Object.values(msg.images).map((u: string) => absolutize(u)));
               }
               break;
             case "complete":

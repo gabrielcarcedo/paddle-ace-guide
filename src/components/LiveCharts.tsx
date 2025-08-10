@@ -10,7 +10,21 @@ import {
   Legend,
 } from "recharts";
 
-export type LivePoint = { t: number; spm?: number; strokes?: number };
+export type LivePoint = {
+  t: number;
+  spm?: number;
+  // alturas (px relativos)
+  left_hand?: number;
+  right_hand?: number;
+  head?: number;
+  hip?: number;
+  // ángulos (grados)
+  rotation?: number;
+  left_axilla?: number;
+  right_axilla?: number;
+  // compatibilidad
+  strokes?: number;
+};
 
 interface LiveChartsProps {
   data: LivePoint[];
@@ -42,7 +56,7 @@ const LiveCharts: React.FC<LiveChartsProps> = ({ data, images }) => {
 
       {data && data.length > 0 && (
         <section>
-          <h2 className="text-lg font-semibold">Strokes en el tiempo</h2>
+          <h2 className="text-lg font-semibold">Alturas de landmarks (manos, cabeza, cadera)</h2>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
@@ -51,7 +65,30 @@ const LiveCharts: React.FC<LiveChartsProps> = ({ data, images }) => {
                 <YAxis tick={{ fontSize: 12 }} />
                 <ReTooltip />
                 <Legend />
-                <Line dot={false} type="monotone" dataKey="strokes" stroke="hsl(var(--muted-foreground))" name="Strokes" />
+                <Line dot={false} type="monotone" dataKey="left_hand" stroke="hsl(var(--primary))" name="Mano Izquierda (altura)" />
+                <Line dot={false} type="monotone" dataKey="right_hand" stroke="hsl(var(--secondary))" name="Mano Derecha (altura)" />
+                <Line dot={false} type="monotone" dataKey="head" stroke="hsl(var(--accent))" name="Cabeza (altura)" />
+                <Line dot={false} type="monotone" dataKey="hip" stroke="hsl(var(--muted-foreground))" name="Cadera (altura)" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
+      )}
+
+      {data && data.length > 0 && (
+        <section>
+          <h2 className="text-lg font-semibold">Ángulos de rotación y axila</h2>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="t" tick={{ fontSize: 12 }} label={{ value: "t (s)", position: "insideBottomRight", offset: -5 }} />
+                <YAxis tick={{ fontSize: 12 }} />
+                <ReTooltip />
+                <Legend />
+                <Line dot={false} type="monotone" dataKey="rotation" stroke="hsl(var(--primary))" name="Rotación" />
+                <Line dot={false} type="monotone" dataKey="left_axilla" stroke="hsl(var(--secondary))" name="Axila Izq" />
+                <Line dot={false} type="monotone" dataKey="right_axilla" stroke="hsl(var(--muted-foreground))" name="Axila Der" />
               </LineChart>
             </ResponsiveContainer>
           </div>
