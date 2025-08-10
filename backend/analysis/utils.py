@@ -112,25 +112,29 @@ def _hf_request(api_key: str, prompt: str) -> str:
     payload = {
         "inputs": prompt,
         "parameters": {"max_new_tokens": 80, "temperature": 0.4},
+        "options": {"wait_for_model": True},
     }
     try:
         resp = requests.post(
-            "https://api-inference.huggingface.co/models/distilbert-base-uncased",
+            "https://api-inference.huggingface.co/models/google/flan-t5-small",
             headers=headers,
             json=payload,
-            timeout=12,
+            timeout=30,
         )
         resp.raise_for_status()
         data = resp.json()
-        if isinstance(data, list):
-            text = (data[0] or {}).get("generated_text")
-        else:
-            text = data.get("generated_text")
+        text = None
+        if isinstance(data, list) and data:
+            text = (data[0] or {}).get("generated_text") or (data[0] or {}).get("summary_text")
+        elif isinstance(data, dict):
+            text = data.get("generated_text") or data.get("summary_text")
+        if not text and isinstance(data, str):
+            text = data
         if not text:
-            text = "Ajusta la técnica manteniendo cadencia constante y empuje eficiente.1"
+            text = "Ajusta la técnica manteniendo cadencia constante y empuje eficiente."
         return text.strip()
     except Exception:
-        return "Ajusta la técnica manteniendo cadencia constante y empuje eficiente.2"
+        return "Ajusta la técnica manteniendo cadencia constante y empuje eficiente."
 
 async def hf_generate_coach_note(api_key: str, spm: int = 0, strokes: int = 0, head_height: int = 0, hip_height: int = 0, right_hand_height: int = 0, left_hand_height: int = 0, body_rotation: int = 0) -> str:
     if not api_key:
